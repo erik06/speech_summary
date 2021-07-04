@@ -7,7 +7,8 @@ from collections import Counter
 
 
 def main():
-    url = "http://www.analytictech.com/mb021/mlk.htm"
+    # url = "http://www.analytictech.com/mb021/mlk.htm"
+    url = "https://jamesclear.com/great-speeches/make-your-bed-by-admiral-william-h-mcraven"
     page = requests.get(url)
     page.raise_for_status()
     soup = bs4.BeautifulSoup(page.text, "html.parser")
@@ -28,10 +29,45 @@ def main():
 
     speech_edit_no_stop = remove_stop_words(speech_edit)
     word_freq = get_word_freq(speech_edit_no_stop)
-    sent_scores = score_sentances(speech, word_freq, max_words)
+    sent_scores = score_sentences(speech, word_freq, max_words)
 
     counts = Counter(sent_scores)
     summary = counts.most_common(int(num_sents))
     print("\nSUMMARY:")
     for i in summary:
         print(i[0])
+
+
+def remove_stop_words(speech_edit):
+    """Remove stop words from string and return string."""
+    stop_words = set(stopwords.words("english"))
+    speech_edit_no_stop = ""
+    for word in nltk.word_tokenize(speech_edit):
+        speech_edit_no_stop += word + " "
+    return speech_edit_no_stop
+
+
+def get_word_freq(speech_edit_no_stop):
+    """Return a dictionary of word frequency in a string."""
+    word_freq = nltk.FreqDist(nltk.word_tokenize(speech_edit_no_stop.lower()))
+    return word_freq
+
+
+def score_sentences(speech, word_freq, max_words):
+    """Return dictionary of sentence scores based on word frequency."""
+    sent_scores = dict()
+    sentences = nltk.sent_tokenize(speech)
+    for sent in sentences:
+        sent_scores[sent] = 0
+        words = nltk.word_tokenize(sent.lower())
+        sent_word_count = len(words)
+        if sent_word_count <= int(max_words):
+            for word in words:
+                if word in word_freq.keys():
+                    sent_scores[sent] += word_freq[word]
+            sent_scores[sent] = sent_scores[sent] / sent_word_count
+    return sent_scores
+
+
+if __name__ == "__main__":
+    main()
